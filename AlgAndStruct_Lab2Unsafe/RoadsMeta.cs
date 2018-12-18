@@ -6,7 +6,7 @@ namespace AlgAndStruct_Lab2Unsafe
 {
     internal unsafe struct RoadsMeta
     {
-        public long startPtr;
+        //public long startPtr;
         public long removeStackPtr;
         public long elementCount;
 

@@ -28,7 +28,6 @@ namespace AlgAndStruct_Lab2Unsafe
                     };
                     roadsMeta = new RoadsMeta()
                     {
-                        startPtr = 0,
                         removeStackPtr = 0,
                     };
                     _cityFileStream.Write(BitConverter.GetBytes(citiesMeta));
@@ -151,17 +150,28 @@ namespace AlgAndStruct_Lab2Unsafe
             var meta = ReadRoadsMeta();
             var offset = 0L;
 
-            var path = new Path()
-            {
-                nextPtr = meta.startPtr,
-            };
-
-            var check = TryGetCityPtr(cityTo, out path.cityPtr);
+            var check = TryGetCityPtr(cityTo, out var cityToPtr);
 
             if(!check)
             {
                 throw new ArgumentException();
             }
+
+            check = TryGetCityPtr(cityFrom, out var cityFromPtr);
+
+            if (!check)
+            {
+                throw new ArgumentException();
+            }
+
+            var cityFromData = ReadCity(cityFromPtr);
+
+            var path = new Path()
+            {
+                nextPtr = cityFromData.roadsListPtr,
+                cityPtr = cityToPtr,
+            };
+
 
             if (meta.removeStackPtr == 0)
             {
@@ -180,11 +190,14 @@ namespace AlgAndStruct_Lab2Unsafe
                 meta.removeStackPtr = pathTemp.nextPtr;
             }
 
+            cityFromData.roadsListPtr = offset;
             meta.elementCount++;
-            meta.startPtr = offset;
 
             _pathFileStream.Seek(offset, SeekOrigin.Begin);
             _pathFileStream.Write(BitConverter.GetBytes(path));
+
+            _cityFileStream.Seek(cityFromPtr, SeekOrigin.Begin);
+            _cityFileStream.Write(BitConverter.GetBytes(cityFromData));
 
             _pathFileStream.Seek(0, SeekOrigin.Begin);
             _pathFileStream.Write(BitConverter.GetBytes(meta));
@@ -194,33 +207,38 @@ namespace AlgAndStruct_Lab2Unsafe
         {
             var meta = ReadRoadsMeta();
 
-            if(meta.startPtr == 0)
-            {
-                return false;
-            }
-
-            var offset = meta.startPtr;
-            var path = ReadPath(offset);
-
-            var check = TryGetCityPtr(cityFrom, out var fromPtr);
-
-            if(!check)
-            {
-                return false;
-            }
-
-            check = TryGetCityPtr(cityTo, out var toPtr);
+            var check = TryGetCityPtr(cityFrom, out var cityFromPtr);
 
             if (!check)
             {
                 return false;
             }
 
-            if (path.cityPtr == toPtr)
+            check = TryGetCityPtr(cityTo, out var cityToPtr);
+
+            if (!check)
             {
-                meta.startPtr = path.nextPtr;
+                return false;
+            }
+
+            var cityFromData = ReadCity(cityFromPtr);
+
+            if(cityFromData.roadsListPtr == 0)
+            {
+                return false;
+            }
+
+            var offset = cityFromData.roadsListPtr;
+            var path = ReadPath(offset);
+
+            if (path.cityPtr == cityToPtr)
+            {
+                cityFromData.roadsListPtr = path.nextPtr;
                 path.nextPtr = meta.removeStackPtr;
                 meta.removeStackPtr = offset;
+
+                _cityFileStream.Seek(cityFromPtr, SeekOrigin.Begin);
+                _cityFileStream.Write(BitConverter.GetBytes(cityFromData));
 
                 _pathFileStream.Seek(offset, SeekOrigin.Begin);
                 _pathFileStream.Write(BitConverter.GetBytes(path));
@@ -235,7 +253,7 @@ namespace AlgAndStruct_Lab2Unsafe
                 var newOffset = path.nextPtr;
                 var newPath = ReadPath(newOffset);
 
-                if (newPath.cityPtr == toPtr)
+                if (newPath.cityPtr == cityToPtr)
                 {
                     path.nextPtr = newPath.nextPtr;
                     newPath.nextPtr = meta.removeStackPtr;
@@ -253,17 +271,64 @@ namespace AlgAndStruct_Lab2Unsafe
                     return true;
                 }
 
+                offset = newOffset;
                 path = newPath;
             }
 
             return false;
         }
 
-        /*public string TracePath(string from, string to)
+        public List<string> TracePathMain(string from, string to)
         {
-            var sb = new StringBuilder();
+            var checkSet = new HashSet<long>();
+            var paths = new List<string>();
 
-        }*/
+            var dictonary = new Dictionary<long, bool>();
+
+            var check = TryGetCityPtr(from, out var cityPtr);
+
+            TracePath(cityPtr, to, string.Empty, checkSet, paths);
+
+            return paths;
+        }
+
+        private void TracePath(long cityPtr, string target, string currentPath, HashSet<long> set, List<string> paths)
+        {
+            if(set.Contains(cityPtr))
+            {
+                return;
+            }
+
+            var city = ReadCity(cityPtr);
+
+            currentPath += $"->{city.Name}";
+
+            if(city.Name == target)
+            {
+                paths.Add(currentPath);
+                return;
+            }
+
+            if(city.roadsListPtr == 0)
+            {
+                return;
+            }
+
+            set.Add(cityPtr);
+
+            var offset = city.roadsListPtr;
+
+            while (offset!=0)
+            {
+                var path = ReadPath(offset);
+                TracePath(path.cityPtr, target, currentPath, set, paths);
+                offset = path.nextPtr;
+            }
+
+            set.Remove(cityPtr);
+
+            return;
+        }
 
         private bool TryGetCityPtr(string name, out long ptr)
         {
@@ -317,8 +382,8 @@ namespace AlgAndStruct_Lab2Unsafe
         private Path ReadPath(long offset)
         {
             Span<byte> pathBuffer = stackalloc byte[Path.Size];
-            _cityFileStream.Seek(offset, SeekOrigin.Begin);
-            _cityFileStream.Read(pathBuffer);
+            _pathFileStream.Seek(offset, SeekOrigin.Begin);
+            _pathFileStream.Read(pathBuffer);
             return BitConverter.GetPath(pathBuffer);
         }
 
