@@ -10,6 +10,7 @@ namespace AlgAndStruct_Lab2Unsafe
             {
                 list.AddCity("HHHHHHHH");
                 list.AddCity("Aaaaaa");
+                list.AddCity("OOOOOOOOO");
                 list.AddCity("Bbbbbb");
                 list.AddCity("kkkkkkk");
                 list.AddCity("ggggggg");
@@ -26,12 +27,13 @@ namespace AlgAndStruct_Lab2Unsafe
 
                 list.RemoveCity("HHHHHHHH");
                 list.RemoveCity("PPPPPPPP");
+                list.RemoveCity("OOOOOOOOO");
 
                 //var check1 = list.RemovePath("ggggggg", "CC");
                 //var check2 = list.RemovePath("ggggggg", "kkkkkkk");
                 //var check3 = list.RemovePath("ggggggg", "Bbbbbb");
                 list.PackData();
-                list.PackData();
+                //list.PackData();
                 var paths = list.TracePathMain("ggggggg", "CC");
             }
 

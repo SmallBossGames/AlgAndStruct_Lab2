@@ -65,6 +65,7 @@ namespace AlgAndStruct_Lab2Unsafe
             if (meta.removeStackPtr == 0)
             {
                 offset = CitiesMeta.Size + City.Size * meta.elementCount;
+                meta.elementCount++;
             }
             else
             {
@@ -79,7 +80,6 @@ namespace AlgAndStruct_Lab2Unsafe
                 meta.removeStackPtr = cityTemp.nextPtr;
             }
 
-            meta.elementCount++;
             meta.startPtr = offset;
 
             _cityFileStream.Seek(offset, SeekOrigin.Begin);
@@ -176,6 +176,7 @@ namespace AlgAndStruct_Lab2Unsafe
             if (meta.removeStackPtr == 0)
             {
                 offset = RoadsMeta.Size + Path.Size * meta.elementCount;
+                meta.elementCount++;
             }
             else
             {
@@ -191,7 +192,6 @@ namespace AlgAndStruct_Lab2Unsafe
             }
 
             cityFromData.roadsListPtr = offset;
-            meta.elementCount++;
 
             _pathFileStream.Seek(offset, SeekOrigin.Begin);
             _pathFileStream.Write(BitConverter.GetBytes(path));
@@ -315,6 +315,11 @@ namespace AlgAndStruct_Lab2Unsafe
                     liveIndex--;
                 }
 
+                if (remIndex >= liveIndex)
+                {
+                    break;
+                }
+
                 removedElementsFlags[remIndex] = false;
                 removedElementsFlags[liveIndex] = true;
 
@@ -364,6 +369,11 @@ namespace AlgAndStruct_Lab2Unsafe
                 while (remIndex < liveIndex && removedElementsFlags[liveIndex] != false)
                 {
                     liveIndex--;
+                }
+
+                if(remIndex >= liveIndex)
+                {
+                    break;
                 }
 
                 removedElementsFlags[remIndex] = false;
