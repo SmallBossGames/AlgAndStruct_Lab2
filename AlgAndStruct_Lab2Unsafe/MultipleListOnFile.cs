@@ -278,6 +278,170 @@ namespace AlgAndStruct_Lab2Unsafe
             return false;
         }
 
+        public void PackData()
+        {
+            //Помечаем удаляемые города
+            var citiesMeta = ReadCitiesMeta();
+
+            var removedElementsFlags = new bool[citiesMeta.elementCount];
+
+            var offset = citiesMeta.removeStackPtr;
+            var removedElementsCount = 0;
+
+            while(offset!=0)
+            {
+                var index = (offset - CitiesMeta.Size) / City.Size;
+                removedElementsFlags[index] = true;
+                removedElementsCount++;
+
+                var city = ReadCity(offset);
+                offset = city.nextPtr;
+            }
+
+            //Перемещаем данные
+            long remIndex = 0, liveIndex = citiesMeta.elementCount - 1;
+
+            var changedCityPtrs = new Dictionary<long, long>();
+
+            while (remIndex < liveIndex)
+            {
+                while (remIndex < liveIndex && removedElementsFlags[remIndex] !=true)
+                {
+                    remIndex++;
+                }
+
+                while (remIndex < liveIndex && removedElementsFlags[liveIndex] != false)
+                {
+                    liveIndex--;
+                }
+
+                removedElementsFlags[remIndex] = false;
+                removedElementsFlags[liveIndex] = true;
+
+                var oldPtr = liveIndex * City.Size + CitiesMeta.Size;
+                var newPtr = remIndex * City.Size + CitiesMeta.Size;
+                changedCityPtrs.Add(oldPtr, newPtr);
+
+                var city = ReadCity(oldPtr);
+                _cityFileStream.Seek(newPtr, SeekOrigin.Begin);
+                _cityFileStream.Write(BitConverter.GetBytes(city));
+            }
+
+            citiesMeta.elementCount -= removedElementsCount;
+
+            //Помечаем удаляемые дороги
+
+            var pathMeta = ReadRoadsMeta();
+
+            removedElementsFlags = new bool[pathMeta.elementCount];
+            offset = pathMeta.removeStackPtr;
+            removedElementsCount = 0;
+
+            while (offset != 0)
+            {
+                var index = (offset - RoadsMeta.Size) / Path.Size;
+                removedElementsFlags[index] = true;
+                removedElementsCount++;
+
+                var path = ReadPath(offset);
+                offset = path.nextPtr;
+            }
+
+            //Перемещаем дороги
+
+            remIndex = 0;
+            liveIndex = pathMeta.elementCount - 1;
+
+            var changedPathPtrs = new Dictionary<long, long>();
+
+            while (remIndex < liveIndex)
+            {
+                while (remIndex < liveIndex && removedElementsFlags[remIndex] != true)
+                {
+                    remIndex++;
+                }
+
+                while (remIndex < liveIndex && removedElementsFlags[liveIndex] != false)
+                {
+                    liveIndex--;
+                }
+
+                removedElementsFlags[remIndex] = false;
+                removedElementsFlags[liveIndex] = true;
+
+                var oldPtr = liveIndex * Path.Size + RoadsMeta.Size;
+                var newPtr = remIndex * Path.Size + RoadsMeta.Size;
+                changedPathPtrs.Add(oldPtr, newPtr);
+
+                var path = ReadPath(oldPtr);
+                _pathFileStream.Seek(newPtr, SeekOrigin.Begin);
+                _pathFileStream.Write(BitConverter.GetBytes(path));
+            }
+
+            //Дальше будет адовый код для изменения указателей
+            if (changedCityPtrs.ContainsKey(citiesMeta.startPtr))
+            {
+                citiesMeta.startPtr = changedCityPtrs[citiesMeta.startPtr];
+            }
+
+            for (int i = CitiesMeta.Size; i < citiesMeta.elementCount * City.Size + CitiesMeta.Size; i += City.Size)
+            {
+                var city = ReadCity(i);
+                var changeFlag = false;
+
+                if (changedCityPtrs.ContainsKey(city.nextPtr))
+                {
+                    city.nextPtr = changedCityPtrs[city.nextPtr];
+                    changeFlag = true;
+                }
+
+                if(changedPathPtrs.ContainsKey(city.roadsListPtr))
+                {
+                    city.roadsListPtr = changedPathPtrs[city.roadsListPtr];
+                    changeFlag = true;
+                }
+
+                if (changeFlag)
+                {
+                    _cityFileStream.Seek(i, SeekOrigin.Begin);
+                    _cityFileStream.Write(BitConverter.GetBytes(city));
+                }
+            }
+
+            for (int i = RoadsMeta.Size; i < citiesMeta.elementCount * Path.Size + RoadsMeta.Size; i += Path.Size)
+            {
+                var path = ReadPath(i);
+                var changeFlag = false;
+
+                if(changedCityPtrs.ContainsKey(path.cityPtr))
+                {
+                    path.cityPtr = changedCityPtrs[path.cityPtr];
+                    changeFlag = true;
+                }
+
+                if(changedPathPtrs.ContainsKey(path.nextPtr))
+                {
+                    path.nextPtr = changedPathPtrs[path.nextPtr];
+                    changeFlag = true;
+                }
+
+                if (changeFlag)
+                {
+                    _pathFileStream.Seek(i, SeekOrigin.Begin);
+                    _pathFileStream.Write(BitConverter.GetBytes(path));
+                }
+            }
+
+            citiesMeta.removeStackPtr = 0;
+            pathMeta.removeStackPtr = 0;
+
+            _cityFileStream.Seek(0, SeekOrigin.Begin);
+            _cityFileStream.Write(BitConverter.GetBytes(citiesMeta));
+
+            _pathFileStream.Seek(0, SeekOrigin.Begin);
+            _pathFileStream.Write(BitConverter.GetBytes(pathMeta));
+        }
+
         public List<string> TracePathMain(string from, string to)
         {
             var checkSet = new HashSet<long>();
