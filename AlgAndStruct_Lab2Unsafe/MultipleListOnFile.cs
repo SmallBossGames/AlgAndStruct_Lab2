@@ -561,6 +561,45 @@ namespace AlgAndStruct_Lab2Unsafe
             return BitConverter.GetPath(pathBuffer);
         }
 
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            var cityMeta = ReadCitiesMeta();
+            var pathMeta = ReadCitiesMeta();
+
+            sb.AppendLine("Cities data:");
+            var offset = cityMeta.startPtr;
+
+            while (offset!=0)
+            {
+                var city = ReadCity(offset);
+
+                sb.Append("NextPtr: ")
+                    .Append(city.nextPtr)
+                    .Append(" Paths ptr: ")
+                    .Append(city.roadsListPtr)
+                    .AppendLine(" List of roads:");
+
+                var pathsOffset = city.roadsListPtr;
+
+                while (pathsOffset != 0)
+                {
+                    var path = ReadPath(pathsOffset);
+
+                    sb.Append("Next road ptr: ")
+                        .Append(path.nextPtr)
+                        .Append(" City ptr: ")
+                        .Append(path.cityPtr)
+                        .Append("; ");
+                    pathsOffset = path.nextPtr;
+                }
+                sb.AppendLine();
+                offset = city.nextPtr;
+            }
+
+            return sb.ToString();
+        }
+
         public void Dispose()
         {
             _cityFileStream.Dispose();

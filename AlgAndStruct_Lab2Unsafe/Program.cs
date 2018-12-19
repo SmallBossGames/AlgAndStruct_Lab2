@@ -45,7 +45,7 @@ namespace AlgAndStruct_Lab2Unsafe
                             var secondTrace = Console.ReadLine();
                             var trace = list.TracePathMain(firstTrace, secondTrace);
                             foreach (var a in trace)
-                                Console.WriteLine("a");
+                                Console.WriteLine(a);
                             break;
                         default: break;
                     }
