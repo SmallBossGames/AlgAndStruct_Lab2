@@ -60,8 +60,6 @@ namespace AlgAndStruct_Lab2Unsafe
                 roadsListPtr = 0,
             };
 
-            Console.WriteLine(city.Name);
-
             if (meta.removeStackPtr == 0)
             {
                 offset = CitiesMeta.Size + City.Size * meta.elementCount;
@@ -574,7 +572,9 @@ namespace AlgAndStruct_Lab2Unsafe
             {
                 var city = ReadCity(offset);
 
-                sb.Append("NextPtr: ")
+                sb.Append("City: ")
+                    .Append(city.Name)
+                    .Append(" NextPtr: ")
                     .Append(city.nextPtr)
                     .Append(" Paths ptr: ")
                     .Append(city.roadsListPtr)

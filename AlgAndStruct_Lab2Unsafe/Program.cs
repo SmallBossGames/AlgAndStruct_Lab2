@@ -6,39 +6,56 @@ namespace AlgAndStruct_Lab2Unsafe
     {
         static void Main(string[] args)
         {
-            using (var list = new MultipleListOnFile("pidor1.bin", "pidor2.bin", OpenMode.Create))
+            OpenMode mode;
+            Console.WriteLine("Открыть файлы? y/n");
+
+            var value = Console.ReadLine();
+
+            switch (value[0])
             {
-                while (Console.ReadLine() != "7")
-                {
-                    Console.WriteLine("1 - Добавление города\n2 - Удаление города\n3 - Добавление дороги\n4 - Удаление дороги\n5 - Упаковка\n6 - Трассировка\n7 - Выход");
-                    switch (Convert.ToInt32(Console.ReadLine()))
+                case 'y':
+                    mode = OpenMode.Open;
+                    break;
+                default:
+                    mode = OpenMode.Create;
+                    break;
+            }
+
+            using (var list = new MultipleListOnFile("cityFile.bin", "pathFile.bin", mode))
+            {
+                var select = string.Empty;
+                do
+                { 
+                    Console.WriteLine("1 - Добавление города\n2 - Удаление города\n3 - Добавление дороги\n4 - Удаление дороги\n5 - Упаковка\n6 - Трассировка\n7 - Вывести активное содержимое файлов\n8 - Выход");
+                    select = Console.ReadLine();
+                    switch (select[0])
                     {
-                        case 1:
+                        case '1':
                             Console.WriteLine("Введите название города: ");
                             list.AddCity(Console.ReadLine());
                             break;
-                        case 2:
+                        case '2':
                             Console.WriteLine("Введите название города: ");
                             list.RemoveCity(Console.ReadLine());
                             break;
-                        case 3:
+                        case '3':
                             Console.WriteLine("Введите название городов, между которыми проложить дорогу\n Город 1: ");
                             var first = Console.ReadLine();
                             Console.WriteLine("\nГород 2: ");
                             var second = Console.ReadLine();
                             list.AddPath(first, second);
                             break;
-                        case 4:
+                        case '4':
                             Console.WriteLine("Введите название городов, между которыми удалить дорогу\n Город 1: ");
                             var firstRemove = Console.ReadLine();
                             Console.WriteLine("\nГород 2: ");
                             var secondRemove = Console.ReadLine();
                             list.RemovePath(firstRemove, secondRemove);
                             break;
-                        case 5:
+                        case '5':
                             list.PackData();
                             break;
-                        case 6:
+                        case '6':
                             Console.WriteLine("Введите название городов, между которыми вывести все дороги\n Город 1: ");
                             var firstTrace = Console.ReadLine();
                             Console.WriteLine("\nГород 2: ");
@@ -47,9 +64,13 @@ namespace AlgAndStruct_Lab2Unsafe
                             foreach (var a in trace)
                                 Console.WriteLine(a);
                             break;
+                        case '7':
+                            Console.WriteLine(list.ToString());
+                            break;
                         default: break;
                     }
                 }
+                while (select[0] != '8');
                 /* list.AddCity("HHHHHHHH");
                  list.AddCity("Aaaaaa");
                  list.AddCity("OOOOOOOOO");
@@ -78,8 +99,6 @@ namespace AlgAndStruct_Lab2Unsafe
                  //list.PackData();
                  var paths = list.TracePathMain("ggggggg", "CC");*/
             }
-
-            //Console.WriteLine("Hello World!");
         }
     }
 }
